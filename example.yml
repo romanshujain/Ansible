@@ -1,0 +1,96 @@
+---
+- hosts: slave1:slave2
+  become: yes
+  tasks:
+#  - name: ensure apache is at the latest version
+#    yum:
+#      name: httpd
+#      state: latest
+#  -name: install jenkins
+#    yum:
+#      name: jenkins
+#      state: latest
+#  - name: write the apache config file
+#    template:
+#      src: /srv/httpd.j2
+#      dest: /etc/httpd.conf
+#    notify:
+#    - restart apache
+#  - name: ensure apache is running
+#    service:
+#      name: httpd
+#      state: started
+#  handlers:
+#    - name: restart apache
+#      service:
+#        name: httpd
+#        state: restarted
+  - name: Update all packages
+    yum:
+      name: '*'
+      state: latest
+      update_only: yes
+#
+  - name: Ensure a list of yum packages are installed
+    yum:
+      name: "{{ packages }}"
+      state: latest
+      update_cache: yes
+    vars:
+      packages:
+        - python-pip
+        - yum-utils
+        - device-mapper-persistent-data
+        - lvm2
+        - amazon-linux-extras
+        - java
+        - git
+        - gcc
+        - gcc-c++
+        - make
+        - docker
+#
+#  - name: Add extras repository
+#    shell: yum-config-manager --enable extras
+#
+#  - name: Install docker-ce (centos) via amazon-linux-extras packages
+#    shell: "amazon-linux-extras install docker=18.06.1 -y"
+
+  - name: Enable Docker CE service at startup
+    service:
+      name: docker
+      state: started
+      enabled: yes
+#
+  - name: Ensure Python pip packages are installed
+    pip:
+      name: "{{ packages }}"
+    vars:
+      packages:
+        - boto
+        - boto3
+        - docker
+
+  - name: Add the user 'jenkins', appending the group 'docker' to the user's groups
+    user:
+      name: jenkins
+      groups: docker
+      password: $6$n53TNUR1W$Sj1Cp5LzxYMMdIT3Hspn.2/kPOYU32NlrsA2TKcOS1aGnw.JPouqJJEOILuEkYOHjymtfAIYNIl2X35Uy7odC1
+    notify:
+    - restart docker
+  - name: Enable password login
+    lineinfile:
+      path: /etc/ssh/sshd_config
+      regexp: '^PasswordAuthentication no'
+      line: 'PasswordAuthentication yes'
+    notify:
+    - restart sshd
+  handlers:
+    - name: restart docker
+      service:
+        name: docker
+        state: restarted
+    - name: restart sshd
+      service:
+        name: sshd
+        state: restarted
