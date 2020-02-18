@@ -1,0 +1,36 @@
+  - hosts: new
+    tasks:
+      - name: Git installation
+        apt: name=git state=latest
+
+      - name: pip3 installation
+        command: 
+          cmd: sudo apt install python3-pip -y
+
+      - name: Create a direcotry where we want to clone git repo
+        file:
+          state: directory 
+          path: /home/ubuntu/python-project/Git
+        tags: 
+        - dir
+
+      - name: git clone using git module
+        git:
+          repo: 'https://github.com/romanshujain/Python.git'
+          dest: /home/ubuntu/python-project/Git
+        tags:
+        - git-module
+
+      - name: Install psutil
+        command: 
+          cmd: sudo apt-get install gcc python3-dev
+          cmd: pip3 install psutil
+        tags: 
+        - psutil
+
+      - name: running python programe
+        command: 
+          cmd: python3 /home/ubuntu/python-project/Git/System_monitor.py
+        tags: 
+        - run
+      
